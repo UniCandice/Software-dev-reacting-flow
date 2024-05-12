@@ -585,9 +585,9 @@ elseif(ico_model.eq.2) then
       cvara_scal_R(iel)=(1.d0+tau_hr)*cvara_scal(iel)/(1.d0+tau_hr*cvara_scal(iel))
 !      crvexp(iel)=bml_g*(1.d0-cvara_scal_R(iel))*cvara_scal_R(iel)/bml_sigmay/bml_ly(iel)*volume(iel) ! Density
       w3(iel)=I_0(iel)*ro0*lfs_sl*g_bml/sigmay_bml/ly_bml(iel)
-      crvexp(iel)=w3(iel)*cvara_scal_R(iel)**2.d0*volume(iel)+countergrad_sum(iel)
+      crvexp(iel)=w3(iel)*cvara_scal_R(iel)**2.d0*volume(iel)+countergrad_sum(iel)*volume(iel)
       crvimp(iel)=w3(iel)*(-2.d0*cvara_scal_R(iel)+1.d0)*volume(iel) 
-      omega_c(iel)=w3(iel)*cvara_scal_R(iel)*(1.0d0-cvara_scal_R(iel))
+      omega_c(iel)=(crvexp(iel)+crvimp(iel)*cvara_scal(iel))/(volume(iel)+1.d-8)
 
    endif
    enddo

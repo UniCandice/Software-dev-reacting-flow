@@ -139,6 +139,9 @@ cs_user_model(void)
    cs_parameters_add_property("Temperature",
                              1,
                              CS_MESH_LOCATION_CELLS);
+   cs_parameters_add_property("RPV_bar",
+                             1,
+                             CS_MESH_LOCATION_CELLS);
 
 
    cs_parameters_add_property("source_term",

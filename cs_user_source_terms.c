@@ -148,6 +148,8 @@ cs_user_source_terms(cs_domain_t  *domain,
   const  cs_real_t  *cvar_eps       = CS_F_(eps)->val_pre;
   /* Define a cvar_rpv pointer to the reaction progress variable */
   const  cs_field_t *cvar_RPV       = cs_field_by_name_try("RPV");
+ /* Define a cvar_rpv pointer to the reaction progress variable */
+  const  cs_field_t *cvar_RPV_bar   = cs_field_by_name_try("RPV_bar");
   /* Define a cvar_rpv pointer to the dimensionless temperature */
   const  cs_field_t *cvar_theta       = cs_field_by_name_try("Theta");
   /* Define a cvar_omegac pointer to the source term of the reaction progress varaible */
@@ -330,7 +332,7 @@ cs_user_source_terms(cs_domain_t  *domain,
 	   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
 	   {
 	   
-	   countergrad_sum->val[cell_id] += grad2[cell_id][i]*cell_f_vol[cell_id] ;
+	   countergrad_sum->val[cell_id] -= grad2[cell_id][i] ;// sum the values in the diagonal 
 	   
 	   }
 
@@ -346,11 +348,72 @@ cs_user_source_terms(cs_domain_t  *domain,
    
    }
 
+// try other way 
 
+//  normalize_all_vectors(gradc,m->n_cells_with_ghosts);
+     cs_field_gradient_scalar(cvar_RPV,
+                              use_previous_t,
+                              1,       
+                              true,    
+                              grad1);
 
-// normalizaed the graidinet c and keep it to the gradc
-// then get the scalar flux for the countergradient to sflux_RPV_countergrad 
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+	    double norm = 0;
+	    double tau_hrp= 2.3;
+	    double ctilde = cvar_RPV->val_pre[cell_id];
+            cvar_RPV_bar->val[cell_id] = (1.0+tau_hrp)*ctilde/(1.0+tau_hrp*ctilde);
 
+	    norm=pow(grad1[cell_id][0],2)+ pow (grad1[cell_id][1],2)+ pow(grad1[cell_id][2],2)+1e-8;
+            norm=sqrt(norm);
+
+            sflux_countergrad[cell_id][0]  = - grad1[cell_id][0]/norm*1.0*0.7;      
+            sflux_countergrad[cell_id][1]  = - grad1[cell_id][1]/norm*1.0*0.7;        
+            sflux_countergrad[cell_id][2]  = - grad1[cell_id][2]/norm*1.0*0.7;    
+   }
+
+// filtering out the gradient close to 0  
+   for (cs_lnum_t cell_id=0; cell_id<n_cells;cell_id++)
+   {
+	   if (cvar_RPV->val[cell_id]<=0.1||cvar_RPV->val[cell_id]>=0.9)
+	   {
+		   sflux_countergrad[cell_id][0] = 0.0;
+	           sflux_countergrad[cell_id][1] = 0.0;
+   		   sflux_countergrad[cell_id][2] = 0.0;
+
+	   }
+   
+   }
+
+ 
+
+      cs_field_gradient_scalar(cvar_RPV,
+                              use_previous_t,
+                              1,       
+                              true,    
+                              grad1);
+
+   
+      cs_field_gradient_scalar(cvar_RPV_bar,
+                              0,
+                              1,       
+                              true,    
+                              grad2);
+
+    
+
+	   for (cs_lnum_t i =0; i<1; i++){
+
+           for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+	   {
+	   
+	   countergrad_sum->val[cell_id]=-sflux_countergrad[cell_id][0]*(grad1[cell_id][0]- grad2[cell_id][0])  
+		                         -sflux_countergrad[cell_id][1]*(grad1[cell_id][1]- grad2[cell_id][1])
+					 -sflux_countergrad[cell_id][2]*(grad1[cell_id][2]- grad2[cell_id][2]); // sum the values in the diagonal 
+	   
+	   } 
+	   }
+
+     
 
  
   BFT_FREE(sflux_countergrad);
