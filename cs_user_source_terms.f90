@@ -497,15 +497,15 @@ endif
 Re_tau=1.0d0/viscl0
 tau_hr=2.3d0
 lfs_sl=0.7d0
-temp_u=730.0d0
+temp_u=730.d0
 temp_b=2409.d0 
 temp_q=780.0d0
 Pe_Ql=2.2d0
-delta_z=1.d0/Re_tau/0.7d0/lfs_sl  !TODO 110 Re_tau 0.7 Pr 0.7 lfs 
+delta_z=1.d0/110.d0/0.7d0/0.7d0  !TODO 110 Re_tau 0.7 Pr 0.7 lfs 
 delta_th=0.04d0
 
 Le=1.0d0
-dist_q=0.01d0        ! 0.01d0
+dist_q=0.006d0        ! 0.01d0
 
 PI_SDR=Pe_Ql*erf((8.d0*Le-6.d0)/2.d0)
 B_SDR = -6.d0*(Le-1.0d0)
@@ -523,23 +523,21 @@ do iel =1,ncel
    temp(iel)=(1.d0-theta(iel))*temp_u+theta(iel)*temp_b
 enddo 
 
-
+! 
+if ( isca(iscal).eq.isca(1) ) then
 
 
 ! no model
 if (ico_model.eq.0) then
-  if ( isca(iscal).eq.isca(1) ) then
     do iel = 1, ncel
       crvexp(iel) =0.0d0
       crvimp(iel) =0.0d0
       omega_c(iel)=crvexp(iel)+crvimp(iel)*cvara_scal(iel) 
     enddo
-  endif
 
 
 ! EBU
 elseif (ico_model.eq.1) then
-  if ( isca(iscal).eq.isca(1) ) then       
     do iel = 1, ncel
      
      if (temp(iel).le.temp_q) then 
@@ -553,7 +551,6 @@ elseif (ico_model.eq.1) then
       omega_c(iel)=w3(iel)*cvara_scal(iel)*(1-cvara_scal(iel)) 
      endif 
     enddo
-  endif
 
 
 ! BML
@@ -570,13 +567,11 @@ elseif(ico_model.eq.2) then
 
 
 
-  if ( isca(iscal).eq.isca(1) ) then
     do iel = 1, ncel
     
     if (temp(iel).le.temp_q .or.w_dist(iel).le.dist_q ) then
       crvexp(iel)=0.0d0 
       crvimp(iel)=0.0d0
-      omega_c(iel)=0.0d0
     else 
       ly_bml(iel)=max(cl_bml*(lfs_sl/sqrt(2.0d0*w1(iel)/3.0d0))**n_bml &
                   *sqrt(w1(iel))**3/w2(iel), 1.d-8)
@@ -584,14 +579,12 @@ elseif(ico_model.eq.2) then
          
       cvara_scal_R(iel)=(1.d0+tau_hr)*cvara_scal(iel)/(1.d0+tau_hr*cvara_scal(iel))
 !      crvexp(iel)=bml_g*(1.d0-cvara_scal_R(iel))*cvara_scal_R(iel)/bml_sigmay/bml_ly(iel)*volume(iel) ! Density
-      w3(iel)=I_0(iel)*ro0*lfs_sl*g_bml/sigmay_bml/ly_bml(iel)
-      crvexp(iel)=w3(iel)*cvara_scal_R(iel)**2.d0*volume(iel)+countergrad_sum(iel)*volume(iel)
-      crvimp(iel)=w3(iel)*(-2.d0*cvara_scal_R(iel)+1.d0)*volume(iel) 
-      omega_c(iel)=(crvexp(iel)+crvimp(iel)*cvara_scal(iel))/(volume(iel)+1.d-8)
-
-   endif
-   enddo
-  endif
+      w3(iel)=I_0(iel)*ro0*lfs_sl*g_bml/sigmay_bml/ly_bml(iel)*volume(iel)
+      crvexp(iel)=w3(iel)*cvara_scal_R(iel)**2.d0
+      crvimp(iel)=w3(iel)*(-2.d0*cvara_scal_R(iel)+1.d0) 
+     endif
+      omega_c(iel)=(crvexp(iel)+crvimp(iel)*cvara_scal(iel))
+    enddo
   ! Free memory 
   deallocate(cvara_scal_R)
 
@@ -605,7 +598,6 @@ elseif(ico_model.eq.3) then
   call field_get_val_s_by_name("C4",C4)
   call field_get_val_s_by_name("SDR_c",SDR_c)
 
-  if ( isca(iscal).eq.isca(1) ) then
     do iel = 1, ncel
     
     Ka_L(iel) = max(sqrt(delta_th*w2(iel)/(lfs_sl**3)),1.d-8) 
@@ -630,7 +622,6 @@ elseif(ico_model.eq.3) then
       omega_c(iel)=2.d0*crom(iel)*SDR_c(iel)/(2*c_m-1.d0)
       endif
     enddo
-  endif
 
   ! SDR flame wall interaction
 
@@ -647,7 +638,6 @@ elseif(ico_model.eq.31) then
   allocate(psi(ncelet))
 
 
-  if ( isca(iscal).eq.isca(1) ) then
     do iel = 1, ncel
     Ka_L(iel) = max(sqrt(delta_th*w2(iel)/(lfs_sl**3)),1.d-8) 
     Da_L(iel) = max(lfs_sl * w1(iel)/w2(iel)/delta_th,1.d-8)
@@ -684,22 +674,42 @@ elseif(ico_model.eq.31) then
                      ro0*lfs_sl*A2(iel)*A3(iel) &
                      *sqrt(crom(iel)*Re_tau*0.7d0*SDR_c(iel))*exp(-0.5*(w_dist(iel)/delta_z-PI_SDR)**2)/(Le**B_SDR)) 
 
-      crvexp(iel)=omega_c(iel)*volume(iel)+countergrad_sum(iel)
+      crvexp(iel)=omega_c(iel)*volume(iel)
       crvimp(iel)=0.d0 
      endif
     enddo
-  endif
   deallocate(A1, A2, A3,A_eps)
   deallocate(psi)
 endif
 
 
+! add  countergradient term as a source term
+if (ico_countergrad.eq.1) then
+    do iel = 1,ncel
+       crvexp(iel)=crvexp(iel)+countergrad_sum(iel)*volume(iel) 
+    enddo
+endif 
+
+endif ! to the isca(iscal).eq.isca(1)
+
+
+
+
+
 ! add source term to theta, the second scalar 
 if ( isca(iscal).eq.isca(2) ) then       
+    if (ico_model.eq.2) then 
+    do iel = 1, ncel    
+      crvexp(iel)=omega_c(iel)
+      crvimp(iel)=0.0
+    enddo
+
+    else 
     do iel = 1, ncel    
       crvexp(iel)=omega_c(iel)*volume(iel)
       crvimp(iel)=0.0
     enddo
+    endif 
 endif
 
 

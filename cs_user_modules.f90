@@ -69,7 +69,7 @@ module user_module
   double precision   :: c_m        = 0.844d0
 
   integer, parameter :: ico_variance =0
-  integer, parameter :: ico_countergrad = 1 
+  integer, parameter :: ico_countergrad = 1
 
 !< [variables for combustion]
 
