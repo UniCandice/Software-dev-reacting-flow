@@ -372,9 +372,11 @@ cs_user_source_terms(cs_domain_t  *domain,
   if (ico_countergrad_c==1){
 
     /* Define a cvar_rpv pointer to the reaction progress variable */
-  const  cs_field_t *countergrad_sum       = cs_field_by_name_try("countergrad_sum");
-    
+  const  cs_field_t *countergrad_sum       = cs_field_by_name_try("countergrad_sum"); // countergrad_sum=countergrad_c_sum
+  const  cs_field_t *countergrad_t_sum     = cs_field_by_name_try("countergrad_t_sum");
   countergrad_calculation(cvar_RPV,countergrad_sum,n_cells, m->n_cells_with_ghosts);
+  countergrad_calculation(cvar_theta,countergrad_t_sum,n_cells, m->n_cells_with_ghosts);
+
   }
 
 

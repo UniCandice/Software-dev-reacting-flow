@@ -371,6 +371,7 @@ double precision, dimension(:), pointer :: diff_c_T
 double precision, dimension(:), pointer :: RPV_variance, theta_variance
 
 double precision, dimension(:), pointer :: countergrad_sum 
+double precision, dimension(:), pointer :: countergrad_t_sum 
 
 
 
@@ -517,6 +518,7 @@ call field_get_val_s_by_name("source_term",omega_c)
 call field_get_val_s_by_name("Temperature",temp)
 call field_get_val_s_by_name("wall_distance",w_dist)
 call field_get_val_s_by_name("countergrad_sum",countergrad_sum)
+call field_get_val_s_by_name("countergrad_t_sum",countergrad_t_sum)
 
 
 do iel =1,ncel
@@ -682,7 +684,6 @@ elseif(ico_model.eq.31) then
   deallocate(psi)
 endif
 
-
 ! add  countergradient term as a source term
 if (ico_countergrad.eq.1) then
     do iel = 1,ncel
@@ -700,7 +701,7 @@ endif ! to the isca(iscal).eq.isca(1)
 if ( isca(iscal).eq.isca(2) ) then       
     if (ico_model.eq.2) then 
     do iel = 1, ncel    
-      crvexp(iel)=omega_c(iel)
+      crvexp(iel)=omega_c(iel) 
       crvimp(iel)=0.0
     enddo
 
@@ -709,11 +710,17 @@ if ( isca(iscal).eq.isca(2) ) then
       crvexp(iel)=omega_c(iel)*volume(iel)
       crvimp(iel)=0.0
     enddo
+    endif
+    
+    ! add  countergradient term as a source term for temperature transport 
+    if (ico_countergrad.eq.1) then
+    do iel = 1,ncel
+       crvexp(iel)=crvexp(iel)+countergrad_t_sum(iel)*volume(iel) 
+    enddo
     endif 
-endif
 
+endif  ! to the isca(iscal).eq.isca(2)
 
-! add  countergradient term as a source term
 
 
 

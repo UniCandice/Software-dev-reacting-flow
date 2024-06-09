@@ -215,9 +215,12 @@ cs_user_model(void)
   }
 
  
-
-
    cs_parameters_add_property("countergrad_sum",
+                             1,
+                             CS_MESH_LOCATION_CELLS);
+
+
+   cs_parameters_add_property("countergrad_t_sum",
                              1,
                              CS_MESH_LOCATION_CELLS);
 
